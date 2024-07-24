@@ -1,29 +1,26 @@
 # Databricks notebook source
 # MAGIC %md 
-# MAGIC %md 
-# MAGIC # Real-time Monitoring and Anomaly Detection on Streaming IoT pipelines in Manufacturing 
-# MAGIC 
-# MAGIC Manufacturers today face challenges working with IoT data due to high investment costs, security, and connectivity outages. These challenges lead to more time and money being spent on trying to make things work rather than innovating on data products that drive business value.  The Databricks Lakehouse platform reduces these challenges with a reliable, secure platform capable of ingesting and transforming IoT data at massive scale, building analytics and AI assets on that data, and serving those assets where they are needed
-# MAGIC 
-# MAGIC In this solution accelerator, we show how to build a streaming pipeline for IoT data, train a machine learning model on that data, and use that model to make predictions on new IoT data.
-# MAGIC 
-# MAGIC The pattern shown consumes data from an Apache Kafka stream. Kafka is a distributed event streaming message bus that combines the best features of queuing and publish-subscribe technologies. [Kafka connectors for Spark\\({^T}{^M}\\) Structured Streaming](https://docs.databricks.com/structured-streaming/kafka.html) are packaged together within the Databricks runtime, making it easy to get started. Using these connectors, data from Kafka streams can easily be persisted into Delta Lakehouse. From there, advanced analytics or machine learning algorithms may be executed on the data.
-# MAGIC 
-# MAGIC You may find this series of notebooks at https://github.com/databricks-industry-solutions/iot-anomaly-detection. 
-# MAGIC 
+# MAGIC #Real-time Monitoring and Anomaly Detection on Streaming IoT Pipelines in Manufacturing
+# MAGIC
+# MAGIC Manufacturers today are grappling with IoT data issues due to high costs, security headaches, and connectivity failures. Instead of innovating, they end up wasting time and money just trying to keep things running. Our real-time anomaly detection solution cuts through these problems with a platform that’s reliable and secure, capable of handling and transforming IoT data at massive scales. It builds analytics and AI assets on that data, serving them exactly where needed.
+# MAGIC
+# MAGIC We’ll show you how to set up a streaming pipeline for IoT data, train a machine learning model, and use it to predict new IoT data anomalies.
+# MAGIC
+# MAGIC This setup pulls data from an Azure Event Hub stream—a fancy way of saying it uses a distributed event streaming message bus that combines queuing and publish-subscribe tech, working seamlessly with Kafka connectors. Thanks to the Kafka connectors bundled within the Databricks runtime, you can persist Event Hub streams into Delta Lakehouse with minimal fuss. From there, unleash advanced analytics or machine learning algorithms on your data.
+# MAGIC
 # MAGIC <p></p>
-# MAGIC 
-# MAGIC <img src="https://github.com/databricks-industry-solutions/iot-anomaly-detection/blob/main/images/iot_streaming_lakehouse.png?raw=true" width=75%/>
-# MAGIC 
+# MAGIC
+# MAGIC <img src="https://github.com/bandpeycom/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams-target-architecture.png?raw=true" width=75%/>
+# MAGIC
 # MAGIC <p></p>
-# MAGIC 
-# MAGIC ## Stream the Data from Kafka into a Bronze Delta Table
-# MAGIC 
+# MAGIC
+# MAGIC ## Stream the Data from Azure Event Hub into a Bronze Delta Table
+# MAGIC
 # MAGIC <p></p>
-# MAGIC <center><img src="https://github.com/databricks-industry-solutions/iot-anomaly-detection/blob/main/images/03_bronze.jpg?raw=true" width="30%"></center>
-# MAGIC 
-# MAGIC 
-# MAGIC This notebook will read the IoT data from Kafka and put it into a Delta Lake table called "Bronze".
+# MAGIC <center><img src="https://github.com/bandpeycom/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams-ingest.png?raw=true" width="30%"></center>
+# MAGIC
+# MAGIC
+# MAGIC This notebook will read the IoT data from Azure Event Hub and put it into a Delta Lake table called "Bronze".
 
 # COMMAND ----------
 
@@ -71,9 +68,9 @@ kafka_df = (
 # COMMAND ----------
 
 # MAGIC %md 
-# MAGIC 
+# MAGIC
 # MAGIC ### Write the Kafka data to Bronze Delta table
-# MAGIC 
+# MAGIC
 # MAGIC Here we generate some data and pump the data into the kafka topic. For your use case, if there is a Kafka topic with data continuously arriving, you can skip the following data generation step.
 
 # COMMAND ----------
