@@ -1,18 +1,14 @@
 # Databricks notebook source
-# MAGIC %md You may find this series of notebooks at https://github.com/databricks-industry-solutions/iot-anomaly-detection. 
-
-# COMMAND ----------
-
 # MAGIC %md
-# MAGIC 
+# MAGIC
 # MAGIC ## Parse/Transform the data from Bronze and load to Silver
-# MAGIC 
+# MAGIC
 # MAGIC <br/>
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/iot-anomaly-detection/main/images/04_silver.jpg" width="50%">
-# MAGIC 
-# MAGIC 
-# MAGIC 
+# MAGIC
+# MAGIC
+# MAGIC
 # MAGIC This notebook will stream new events from the Bronze table, parse/transform them, and load them to a Delta table called "Silver".
 
 # COMMAND ----------
@@ -32,7 +28,7 @@ checkpoint_location_target = f"{checkpoint_path}/{target_table}"
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC 
+# MAGIC
 # MAGIC ### Incrementally Read data from Bronze
 
 # COMMAND ----------
