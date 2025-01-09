@@ -10,7 +10,7 @@
 # MAGIC
 # MAGIC <p></p>
 # MAGIC
-# MAGIC <img src="https://github.com/bandpeycom/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams-target-architecture.png?raw=true" width=75%/>
+# MAGIC <img src="https://github.com/bandpeycom/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams-target-architecture.png?raw=true" width=100%/>
 # MAGIC
 # MAGIC <p></p>
 # MAGIC
