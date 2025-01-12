@@ -86,32 +86,32 @@ def get_cloud_name():
 
 # COMMAND ----------
 
-# mount_name = "field-demos"
+mount_name = "field-demos"
 
-# try:
-#   dbutils.fs.ls("/mnt/%s" % mount_name)
-# except:
-#   workspace_id = dbutils.entry_point.getDbutils().notebook().getContext().workspaceId().get()
-#   url = dbutils.entry_point.getDbutils().notebook().getContext().apiUrl().get()
-#   if workspace_id == '8194341531897276':
-#     print("CSE2 bucket isn't mounted, mount the demo data under %s" % mount_name)
-#     dbutils.fs.mount(f"s3a://databricks-field-demos/" , f"/mnt/{mount_name}")
-#   elif "azure" in url:
-#     print("ADLS2 isn't mounted, mount the demo data under %s" % mount_name)
-#     configs = {"fs.azure.account.auth.type": "OAuth",
-#               "fs.azure.account.oauth.provider.type": "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
-#               "fs.azure.account.oauth2.client.id": dbutils.secrets.get(scope = "common-sp", key = "common-sa-sp-client-id"),
-#               "fs.azure.account.oauth2.client.secret": dbutils.secrets.get(scope = "common-sp", key = "common-sa-sp-client-secret"),
-#               "fs.azure.account.oauth2.client.endpoint": "https://login.microsoftonline.com/9f37a392-f0ae-4280-9796-f1864a10effc/oauth2/token"}
+try:
+  dbutils.fs.ls("/mnt/%s" % mount_name)
+except:
+  workspace_id = dbutils.entry_point.getDbutils().notebook().getContext().workspaceId().get()
+  url = dbutils.entry_point.getDbutils().notebook().getContext().apiUrl().get()
+  if workspace_id == '8194341531897276':
+    print("CSE2 bucket isn't mounted, mount the demo data under %s" % mount_name)
+    dbutils.fs.mount(f"s3a://databricks-field-demos/" , f"/mnt/{mount_name}")
+  elif "azure" in url:
+    print("ADLS2 isn't mounted, mount the demo data under %s" % mount_name)
+    configs = {"fs.azure.account.auth.type": "OAuth",
+              "fs.azure.account.oauth.provider.type": "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
+              "fs.azure.account.oauth2.client.id": dbutils.secrets.get(scope = "common-sp", key = "common-sa-sp-client-id"),
+              "fs.azure.account.oauth2.client.secret": dbutils.secrets.get(scope = "common-sp", key = "common-sa-sp-client-secret"),
+              "fs.azure.account.oauth2.client.endpoint": "https://login.microsoftonline.com/9f37a392-f0ae-4280-9796-f1864a10effc/oauth2/token"}
 
-#     dbutils.fs.mount(
-#       source = "abfss://field-demos@fielddemosdatasets.dfs.core.windows.net/field-demos",
-#       mount_point = "/mnt/"+mount_name,
-#       extra_configs = configs)
-#   else:
-#     aws_bucket_name = ""
-#     print("bucket isn't mounted, mount the demo bucket under %s" % mount_name)
-#     dbutils.fs.mount(f"s3a://databricks-datasets-private/field-demos" , f"/mnt/{mount_name}")
+    dbutils.fs.mount(
+      source = "abfss://field-demos@fielddemosdatasets.dfs.core.windows.net/field-demos",
+      mount_point = "/mnt/"+mount_name,
+      extra_configs = configs)
+  else:
+    aws_bucket_name = ""
+    print("bucket isn't mounted, mount the demo bucket under %s" % mount_name)
+    dbutils.fs.mount(f"s3a://databricks-datasets-private/field-demos" , f"/mnt/{mount_name}")
 
 # COMMAND ----------
 

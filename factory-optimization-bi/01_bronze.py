@@ -16,6 +16,34 @@
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC -- Create the catalog
+# MAGIC CREATE CATALOG IF NOT EXISTS demos;
+# MAGIC
+# MAGIC -- Create the schema within the catalog
+# MAGIC CREATE SCHEMA IF NOT EXISTS demos.factory_optimization;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT CURRENT_METASTORE();
+
+# COMMAND ----------
+
+# Define the paths
+schema_location = "dbfs:/FileStore/demos/factory_optimization/bronze/schema"
+checkpoint_location = "dbfs:/FileStore/demos/factory_optimization/bronze/checkpoint"
+
+# Create the directories
+dbutils.fs.mkdirs(schema_location)
+dbutils.fs.mkdirs(checkpoint_location)
+
+# Print the paths to verify
+print(f"Schema location: {schema_location}")
+print(f"Checkpoint location: {checkpoint_location}")
+
+# COMMAND ----------
+
 # DBTITLE 1,Ingest Raw Telemetry from Plants
 from pyspark.sql.functions import *
 
@@ -26,6 +54,7 @@ df = (
     .option("cloudFiles.format", "json")
     .option("cloudFiles.inferColumnTypes", "true")
     .option("cloudFiles.maxFilesPerTrigger", 16)
+    .option("cloudFiles.schemaLocation", schema_location)
     .load("s3://db-gtm-industry-solutions/data/mfg/factory-optimization/incoming_sensors")
 )
 
@@ -35,8 +64,9 @@ df = df.withColumn("body", col("body").cast('string'))
 # Write the stream to a Delta table in the specified schema
 (df.writeStream
    .format("delta")
-   .option("checkpointLocation", "/path/to/checkpoint/dir")
-   .start("dbfs:/user/hive/warehouse/retail_roozbeh.db/OEE_bronze"))
+   .option("mergeSchema", "true")
+   .option("checkpointLocation", checkpoint_location)
+   .table("demos.factory_optimization.bronze"))
 
 # COMMAND ----------
 
@@ -68,19 +98,37 @@ EEO_schema = spark.read.json(sc.parallelize([example_body])).schema
 
 # COMMAND ----------
 
-silver_rules = {"positive_defective_parts":"defectivePartsMade >= 0",
-                "positive_parts_made":"totalPartsMade >= 0",
-                "positive_oil_level":"oilLevel >= 0",
-                "expected_shifts": "shiftNumber >= 1 and shiftNumber <= 3"}
+from pyspark.sql.functions import *
 
-@dlt.table(comment = "Process telemetry from factory floor into Tables for Analytics",
-                  table_properties={"pipelines.autoOptimize.managed": "true"})
-@dlt.expect_all_or_drop(silver_rules)
-def OEE_silver():
-  return (dlt.read_stream('hive_metastore.retail_roozbeh.OEE_bronze')
-             .withColumn("jsonData", from_json(col("body"), EEO_schema)) 
-             .select("jsonData.applicationId", "jsonData.deviceId", "jsonData.messageProperties.*", "jsonData.telemetry.*") 
-             .withColumn("messageTimestamp", to_timestamp(col("messageTimestamp"))))
+# Define the silver rules
+silver_rules = {
+    "positive_defective_parts": "defectivePartsMade >= 0",
+    "positive_parts_made": "totalPartsMade >= 0",
+    "positive_oil_level": "oilLevel >= 0",
+    "expected_shifts": "shiftNumber >= 1 and shiftNumber <= 3"
+}
+
+# Read the bronze table
+bronze_df = spark.readStream.table("demos.factory_optimization.bronze")
+
+# Extract JSON data and apply schema
+silver_df = (
+    bronze_df
+    .withColumn("jsonData", from_json(col("body"), EEO_schema))
+    .select("jsonData.applicationId", "jsonData.deviceId", "jsonData.messageProperties.*", "jsonData.telemetry.*")
+    .withColumn("messageTimestamp", to_timestamp(col("messageTimestamp")))
+)
+
+# Apply data quality rules
+for rule_name, rule_condition in silver_rules.items():
+    silver_df = silver_df.filter(expr(rule_condition))
+
+# Write the stream to a Delta table in the specified schema
+(silver_df.writeStream
+    .format("delta")
+    .option("mergeSchema", "true")
+    .option("checkpointLocation", "dbfs:/FileStore/demos/factory_optimization/silver/checkpoint")
+    .table("demos.factory_optimization.silver"))
 
 # COMMAND ----------
 
@@ -93,9 +141,15 @@ def OEE_silver():
 
 # COMMAND ----------
 
-@dlt.table(comment="count of workforce for a given shift read from delta")
-def workforce_silver():
-  return spark.read.format("delta").load("s3://db-gtm-industry-solutions/data/mfg/factory-optimization/workforce")
+# Read the workforce data from the specified S3 path
+workforce_df = spark.read.format("delta").load("s3://db-gtm-industry-solutions/data/mfg/factory-optimization/workforce")
+
+# Write the workforce data to the silver table
+(workforce_df.write
+    .format("delta")
+    .mode("overwrite")
+    .option("mergeSchema", "true")
+    .saveAsTable("demos.factory_optimization.workforce_silver"))
 
 # COMMAND ----------
 
@@ -123,28 +177,74 @@ gold_rules = {"warn_defective_parts":"defectivePartsMade < 35",
 
 import pyspark.sql.functions as F
 
-@dlt.create_table(name="OEE_gold",
-                 comment="Aggregated equipment data from shop floor with additional KPI metrics like OEE",
-                 spark_conf={"pipelines.trigger.interval" : "1 minute"},
-                 table_properties={"pipelines.autoOptimize.managed": "true"})
-@dlt.expect_all(gold_rules)
-def create_agg_kpi_metrics():
-  bus_agg = (dlt.read_stream("OEE_silver")
-          .groupby(F.window(F.col("messageTimestamp"), "5 minutes"), "plantName", "productionLine", "shiftNumber")
-          .agg(F.mean("systemDiskFreePercent").alias("avg_systemDiskFreePercent"),
-               F.mean("oilLevel").alias("avg_oilLevel"), F.min("oilLevel").alias("min_oilLevel"),F.max("oilLevel").alias("max_oilLevel"),
-               F.min("temperature").alias("min_temperature"),F.max("temperature").alias("max_temperature"),
-               F.mean("temperature").alias("avg_temperature"),F.sum("totalPartsMade").alias("totalPartsMade"),
-               F.sum("defectivePartsMade").alias("defectivePartsMade"),
-               F.sum(F.when(F.col("machineHealth") == "Healthy", 1).otherwise(0)).alias("healthy_count"), 
-               F.sum(F.when(F.col("machineHealth") == "Error", 1).otherwise(0)).alias("error_count"),
-               F.sum(F.when(F.col("machineHealth") == "Warning", 1).otherwise(0)).alias("warning_count"), F.count("*").alias("total_count")
-          )
-          .withColumn("Availability", (F.col("healthy_count")-F.col("error_count"))*100/F.col("total_count"))
-          .withColumn("Quality", (F.col("totalPartsMade")-F.col("defectivePartsMade"))*100/F.col("totalPartsMade"))
-          .withColumn("Performance", (F.col("healthy_count")*100/(F.col("healthy_count")+F.col("error_count")+F.col("warning_count"))))
-          .withColumn("OEE", (F.col("Availability")+ F.col("Quality")+F.col("Performance"))/3))
-  return bus_agg.join(dlt.read("workforce_silver"), ["shiftNumber"], "inner")
+# Read the silver table
+silver_df = spark.readStream.table("demos.factory_optimization.silver")
+
+# Add watermark to handle late data
+silver_df = silver_df.withWatermark("messageTimestamp", "10 minutes")
+
+# Aggregate KPI metrics
+bus_agg = (
+    silver_df
+    .groupby(
+        F.window(F.col("messageTimestamp"), "5 minutes"), 
+        "plantName", 
+        "productionLine", 
+        "shiftNumber"
+    )
+    .agg(
+        F.mean("systemDiskFreePercent").alias("avg_systemDiskFreePercent"),
+        F.mean("oilLevel").alias("avg_oilLevel"),
+        F.min("oilLevel").alias("min_oilLevel"),
+        F.max("oilLevel").alias("max_oilLevel"),
+        F.min("temperature").alias("min_temperature"),
+        F.max("temperature").alias("max_temperature"),
+        F.mean("temperature").alias("avg_temperature"),
+        F.sum("totalPartsMade").alias("totalPartsMade"),
+        F.sum("defectivePartsMade").alias("defectivePartsMade"),
+        F.sum(F.when(F.col("machineHealth") == "Healthy", 1).otherwise(0)).alias("healthy_count"),
+        F.sum(F.when(F.col("machineHealth") == "Error", 1).otherwise(0)).alias("error_count"),
+        F.sum(F.when(F.col("machineHealth") == "Warning", 1).otherwise(0)).alias("warning_count"),
+        F.count("*").alias("total_count")
+    )
+    .withColumn("Availability", (F.col("healthy_count") - F.col("error_count")) * 100 / F.col("total_count"))
+    .withColumn("Quality", (F.col("totalPartsMade") - F.col("defectivePartsMade")) * 100 / F.col("totalPartsMade"))
+    .withColumn("Performance", (F.col("healthy_count") * 100 / (F.col("healthy_count") + F.col("error_count") + F.col("warning_count"))))
+    .withColumn("OEE", (F.col("Availability") + F.col("Quality") + F.col("Performance")) / 3)
+)
+
+# Read the workforce silver table
+workforce_df = spark.read.table("demos.factory_optimization.workforce_silver")
+
+# Join with workforce data
+result_df = bus_agg.join(workforce_df, ["shiftNumber"], "inner")
+
+# Write the stream to a Delta table in the specified schema
+(result_df.writeStream
+    .format("delta")
+    .option("mergeSchema", "true")
+    .option("checkpointLocation", "dbfs:/FileStore/demos/factory_optimization/gold/checkpoint")
+    .outputMode("append")
+    .table("demos.factory_optimization.gold"))
+
+# COMMAND ----------
+
+# Function to stop all streaming queries 
+def stop_all_streams():
+    stream_count = len(spark.streams.active)
+    if stream_count > 0:
+        print(f"Stopping {stream_count} streams")
+        for s in spark.streams.active:
+            try:
+                s.stop()
+            except Exception as e:
+                print(f"Error stopping stream: {e}")
+        print("All streams stopped.")
+    else:
+        print("No active streams to stop.")
+
+# Call the function to stop all streams
+stop_all_streams()
 
 # COMMAND ----------
 
