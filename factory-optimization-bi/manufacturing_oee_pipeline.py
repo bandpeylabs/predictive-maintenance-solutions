@@ -2,7 +2,7 @@
 # MAGIC %md-sandbox
 # MAGIC ## Ingesting Sensor JSON payloads and saving them as our first table
 # MAGIC
-# MAGIC <img style="float: right" src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/diagrams-process.png?raw=true" width="100%"/>
+# MAGIC <img style="float: right" src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/diagrams/diagrams-process.png?raw=true" width="100%"/>
 # MAGIC
 # MAGIC Our raw data is being streamed from the device and sent to a blob storage. 
 # MAGIC
@@ -16,6 +16,7 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Create Metastore & Schema
 # MAGIC %sql
 # MAGIC -- Create the catalog
 # MAGIC CREATE CATALOG IF NOT EXISTS demos;
@@ -25,11 +26,13 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Check Current Metastore
 # MAGIC %sql
 # MAGIC SELECT CURRENT_METASTORE();
 
 # COMMAND ----------
 
+# DBTITLE 1,Define Paths and Create Directories
 # Define the paths
 schema_location = "dbfs:/FileStore/demos/factory_optimization/bronze/schema"
 checkpoint_location = "dbfs:/FileStore/demos/factory_optimization/bronze/checkpoint"
@@ -83,6 +86,7 @@ df = df.withColumn("body", col("body").cast('string'))
 
 # COMMAND ----------
 
+# DBTITLE 1,Extract Schema from JSON
 #get the schema we want to extract from a json example
 from pyspark.context import SparkContext
 sc = SparkContext.getOrCreate()
@@ -98,6 +102,7 @@ EEO_schema = spark.read.json(sc.parallelize([example_body])).schema
 
 # COMMAND ----------
 
+# DBTITLE 1,Apply Silver Data Quality Rules and Write to Silver Table
 from pyspark.sql.functions import *
 
 # Define the silver rules
@@ -141,6 +146,7 @@ for rule_name, rule_condition in silver_rules.items():
 
 # COMMAND ----------
 
+# DBTITLE 1,Read Workforce and Write to Silver Table
 # Read the workforce data from the specified S3 path
 workforce_df = spark.read.format("delta").load("s3://db-gtm-industry-solutions/data/mfg/factory-optimization/workforce")
 
@@ -167,6 +173,7 @@ workforce_df = spark.read.format("delta").load("s3://db-gtm-industry-solutions/d
 
 # COMMAND ----------
 
+# DBTITLE 1,Define Gold Data Quality Rules
 gold_rules = {"warn_defective_parts":"defectivePartsMade < 35", 
               "warn_low_temperature":"min_temperature > 70", 
               "warn_low_oilLevel":"min_oilLevel > 60", 
@@ -175,6 +182,7 @@ gold_rules = {"warn_defective_parts":"defectivePartsMade < 35",
 
 # COMMAND ----------
 
+# DBTITLE 1,Aggregate KPI Metrics and Join with Workforce Data
 import pyspark.sql.functions as F
 
 # Read the silver table
@@ -229,6 +237,17 @@ result_df = bus_agg.join(workforce_df, ["shiftNumber"], "inner")
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC ## KPI visualization with Databricks Dashboards
+# MAGIC
+# MAGIC We can now use the gold table in Databricks Dashboard to visualize key metrics like below:
+# MAGIC
+# MAGIC <img src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/screenshots/dashboard.png?raw=true" width="100%"/>
+
+# COMMAND ----------
+
+# DBTITLE 1,Stop All Active Streaming Queries
 # Function to stop all streaming queries 
 def stop_all_streams():
     stream_count = len(spark.streams.active)
@@ -245,7 +264,3 @@ def stop_all_streams():
 
 # Call the function to stop all streams
 stop_all_streams()
-
-# COMMAND ----------
-
-
