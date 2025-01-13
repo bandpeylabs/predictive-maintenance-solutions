@@ -1,6 +1,6 @@
 # Manufacturing Analytics: Real-time Plant Performance Monitoring
 
-<img style="float: right" width="600px" alt="Factory Operations Dashboard" src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/screenshots/dashboard.png?raw=true">
+<img style="float: right" width="100%" alt="Factory Operations Dashboard" src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/screenshots/dashboard.png?raw=true">
 
 ## Overview
 
