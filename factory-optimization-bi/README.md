@@ -1,6 +1,6 @@
 # Manufacturing Analytics: Real-time Plant Performance Monitoring
 
-<img style="float: right" width="600px" alt="Factory Operations Dashboard" src="images/factory-dashboard.png">
+<img style="float: right" width="600px" alt="Factory Operations Dashboard" src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/screenshots/dashboard.png?raw=true">
 
 ## Overview
 
@@ -69,3 +69,37 @@ The solution implements a multi-layer data architecture:
 - Scalable data pipeline architecture
 - Production-ready monitoring solution
 - Integration with existing manufacturing systems
+
+## Data Pipeline Architecture
+
+1. Environment Setup
+   - Establishes a dedicated catalog for manufacturing analytics
+   - Creates an isolated schema for factory optimization workloads
+   - Ensures data organization and access control
+1. Storage Configuration
+   - Configures dedicated storage locations for:
+   - Schema evolution tracking
+   - Stream processing checkpoints
+   - Maintains data consistency and fault tolerance
+1. Real-time Data Ingestion
+   - Implements streaming ingestion for plant telemetry data
+   - Processes continuous sensor readings in real-time
+   - Handles data from multiple manufacturing plants simultaneously
+
+## Data Flow
+
+<img style="float: right" width="100%" alt="Factory Operations Data Flow" src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/factory-optimization-bi/docs/diagrams/diagrams-process.png?raw=true">
+
+### Key Components
+
+1. Catalog & Schema
+   - Logical organization of manufacturing data
+   - Isolation of factory optimization workloads
+1. Storage Layer
+   - Schema evolution tracking
+   - Checkpoint management
+   - Data persistence
+1. Stream Processing
+   - Real-time data ingestion
+   - Continuous processing
+   - Plant telemetry handling
