@@ -5,7 +5,7 @@
 # MAGIC
 # MAGIC <br/>
 # MAGIC
-# MAGIC <img src="https://raw.githubusercontent.com/databricks-industry-solutions/iot-anomaly-detection/main/images/04_silver.jpg" width="50%">
+# MAGIC <img src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/screenshots/transform_step.png?raw=True" width="50%">
 # MAGIC
 # MAGIC
 # MAGIC
@@ -14,15 +14,13 @@
 # COMMAND ----------
 
 # DBTITLE 1,Define configs that are consistent throughout the accelerator
-# MAGIC %run ./util/notebook-config
+# MAGIC %run ./utils/notebook-config
 
 # COMMAND ----------
 
 # DBTITLE 1,Define config for this notebook 
-dbutils.widgets.text("source_table", "bronze")
-dbutils.widgets.text("target_table", "silver")
-source_table = getArgument("source_table")
-target_table = getArgument("target_table")
+source_table = "bronze"
+target_table = "silver"
 checkpoint_location_target = f"{checkpoint_path}/{target_table}"
 
 # COMMAND ----------
@@ -52,27 +50,33 @@ bronze_df = (
 
 # COMMAND ----------
 
-#Schema for the Payload column
-json_schema = StructType([
+# Define the schema for the DataFrame
+schema = StructType([
   StructField("timestamp", IntegerType(), True),
   StructField("device_id", IntegerType(), True),
   StructField("device_model", StringType(), True),
   StructField("sensor_1", FloatType(), True),
   StructField("sensor_2", FloatType(), True),
   StructField("sensor_3", FloatType(), True),
-  StructField("state", StringType(), True)
+  StructField("site_name", StringType(), True)
 ])
 
-#Parse/Transform
+# Parse/Transform
 transformed_df = (
   bronze_df
-    .withColumn("struct_payload", F.from_json("parsedValue", schema = json_schema)) #Apply schema to payload
-    .select("struct_payload.*", F.from_unixtime("struct_payload.timestamp").alias("datetime"))
-    .drop('timestamp')
-            )
+    .select(
+      F.col("timestamp").cast("timestamp").alias("timestamp"),
+      F.col("device_id").cast("integer").alias("device_id"),
+      F.col("device_model").cast("string").alias("device_model"),
+      F.col("sensor_1").cast("float").alias("sensor_1"),
+      F.col("sensor_2").cast("float").alias("sensor_2"),
+      F.col("sensor_3").cast("float").alias("sensor_3"),
+      F.col("site_name").cast("string").alias("site_name")
+    )
+)
 
-#Uncomment to display the transformed data
-#display(transformed_df)
+# Uncomment to display the transformed data
+# display(transformed_df)
 
 # COMMAND ----------
 
