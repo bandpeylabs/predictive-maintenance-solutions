@@ -13,6 +13,7 @@ dbutils.fs.mkdirs(checkpoint_path)
 # COMMAND ----------
 
 spark.sql(f"USE CATALOG {catalog}")
+spark.sql(f"USE SCHEMA {database}")
 
 # COMMAND ----------
 
