@@ -5,22 +5,20 @@
 # MAGIC
 # MAGIC <br/>
 # MAGIC
-# MAGIC <img src="https://github.com/databricks-industry-solutions/iot-anomaly-detection/blob/main/images/05_train_model.jpg?raw=true" width="50%">
+# MAGIC <img src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/screenshots/train_step.png?raw=true" width="50%">
 # MAGIC
 # MAGIC This notebook will label the Silver data, create training and test datasets from the labeled data, train a machine learning model, and deploy the model the MLflow model registry.
 
 # COMMAND ----------
 
 # DBTITLE 1,Define configs that are consistent throughout the accelerator
-# MAGIC %run ./util/notebook-config
+# MAGIC %run ./utils/notebook-config
 
 # COMMAND ----------
 
 # DBTITLE 1,Define config for this notebook 
-dbutils.widgets.text("source_table", "silver")
-dbutils.widgets.text("target_table", "feaures")
-source_table = getArgument("source_table")
-target_table = getArgument("target_table")
+source_table = "silver"
+target_table = "feaures"
 checkpoint_location_target = f"{checkpoint_path}/dataset"
 
 # COMMAND ----------
@@ -51,8 +49,31 @@ display(labeled_df)
 # COMMAND ----------
 
 # DBTITLE 1,Save Feature to Delta Table
-features_df = labeled_df # here you can do more featurization based on domain knowledge
-features_df.write.option("mergeSchema", "true").saveAsTable(f"{database}.{target_table}", mode = "overwrite")
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+# Define window specifications
+rollingWindowSpec = Window.partitionBy("device_id").orderBy("timestamp").rowsBetween(-1, 0)
+lagWindowSpec = Window.partitionBy("device_id").orderBy("timestamp")
+
+# Additional feature engineering
+features_df = (
+  labeled_df
+    .withColumn("sensor_1_rolling_avg", F.avg("sensor_1").over(rollingWindowSpec))
+    .withColumn("sensor_2_rolling_avg", F.avg("sensor_2").over(rollingWindowSpec))
+    .withColumn("sensor_3_rolling_avg", F.avg("sensor_3").over(rollingWindowSpec))
+    .withColumn("sensor_1_diff", F.col("sensor_1") - F.lag("sensor_1", 1).over(lagWindowSpec))
+    .withColumn("sensor_2_diff", F.col("sensor_2") - F.lag("sensor_2", 1).over(lagWindowSpec))
+    .withColumn("sensor_3_diff", F.col("sensor_3") - F.lag("sensor_3", 1).over(lagWindowSpec))
+    .withColumn("sensor_1_sensor_2_interaction", F.col("sensor_1") * F.col("sensor_2"))
+    .withColumn("sensor_1_sensor_3_interaction", F.col("sensor_1") * F.col("sensor_3"))
+    .withColumn("sensor_2_sensor_3_interaction", F.col("sensor_2") * F.col("sensor_3"))
+    .withColumn("hour_of_day", F.hour(F.col("timestamp")))
+    .withColumn("day_of_week", F.dayofweek(F.col("timestamp")))
+)
+
+# Save the features to a Delta table
+features_df.write.option("mergeSchema", "true").mode("overwrite").saveAsTable(f"{database}.{target_table}")
 
 # COMMAND ----------
 
@@ -67,7 +88,7 @@ mlflow.spark.autolog()
 mlflow.sklearn.autolog()
 
 # Read data
-data = features_df.toPandas().drop(["device_id", "datetime"], axis=1)
+data = features_df.toPandas().drop(["device_id", "timestamp"], axis=1)
 
 train, test = train_test_split(data, test_size=0.30, random_state=206)
 colLabel = 'anomaly'
@@ -186,9 +207,13 @@ model_details = mlflow.register_model(model_uri, model_name)
 # COMMAND ----------
 
 # DBTITLE 1,Transition the model to "Production" stage in the registry
-client.transition_model_version_stage(
-  name = model_name,
-  version = model_details.version,
-  stage="Production",
-  archive_existing_versions=True
+from mlflow import MlflowClient
+
+client = MlflowClient()
+
+# Set an alias for the model version
+client.set_registered_model_alias(
+    name=model_name,
+    alias="Production",
+    version=model_details.version
 )
