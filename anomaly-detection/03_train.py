@@ -1,16 +1,12 @@
 # Databricks notebook source
-# MAGIC %md You may find this series of notebooks at https://github.com/databricks-industry-solutions/iot-anomaly-detection. 
-
-# COMMAND ----------
-
 # MAGIC %md
-# MAGIC 
+# MAGIC
 # MAGIC ## Build Test/Train Datasets and Train Model
-# MAGIC 
+# MAGIC
 # MAGIC <br/>
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://github.com/databricks-industry-solutions/iot-anomaly-detection/blob/main/images/05_train_model.jpg?raw=true" width="50%">
-# MAGIC 
+# MAGIC
 # MAGIC This notebook will label the Silver data, create training and test datasets from the labeled data, train a machine learning model, and deploy the model the MLflow model registry.
 
 # COMMAND ----------
@@ -156,7 +152,7 @@ experiment_id = run.info.experiment_id
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC 
+# MAGIC
 # MAGIC You can look at the experiment logging including parameters, metrics, recall curves, etc. by clicking the "experiment" link above or the MLflow Experiments icon in the right navigation pane
 
 # COMMAND ----------
