@@ -57,7 +57,7 @@ df_spec = (
   .withColumn("sensor_1", IntegerType(), minValue=-10, maxValue=100, random=True, distribution=dist.Gamma(40.0,9.0))
   .withColumn("sensor_2", IntegerType(), minValue=0, maxValue=10, random=True)
   .withColumn("sensor_3", FloatType(), minValue=0.0001, maxValue=1.0001, random=True)
-  .withColumn("site_name", StringType(), values=states, random=True)
+  .withColumn("site_name", StringType(), values=site_names, random=True)
 )
                             
 df = df_spec.build()
