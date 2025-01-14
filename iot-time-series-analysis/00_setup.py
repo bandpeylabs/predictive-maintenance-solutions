@@ -13,13 +13,9 @@
 
 from util.onboarding_setup import set_config, reset_tables, dgconfig
 from util.data_generator import generate_iot , land_more_data
-from util.resource_creation import create_pipeline
+# from util.resource_creation import create_pipeline
 
-config = set_config(dbutils, catalog='default')
+config = set_config(dbutils, catalog='demos', schema='iot-time-series-analysis')
 reset_tables(spark, config, dbutils)
-create_pipeline(config, dbutils)
+# create_pipeline(config, dbutils)
 land_more_data(spark, dbutils, config, dgconfig)
-
-# COMMAND ----------
-
-

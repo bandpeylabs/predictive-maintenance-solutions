@@ -4,7 +4,7 @@ import json
 from databricks.sdk import WorkspaceClient
 
 
-def set_config(dbutils, catalog='default', schema=None):
+def set_config(dbutils, catalog='default', schema='iot'):
     w = WorkspaceClient()
     dbx = dbutils.notebook.entry_point.getDbutils().notebook().getContext()
     url = "https://" + dbx.browserHostName().get()
