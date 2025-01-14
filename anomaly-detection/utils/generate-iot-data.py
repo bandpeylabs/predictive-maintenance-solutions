@@ -20,7 +20,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Generate the Data
+# MAGIC ## Generate the Data
 
 # COMMAND ----------
 
@@ -62,3 +62,8 @@ df_spec = (
                             
 df = df_spec.build()
 display(df)
+
+# COMMAND ----------
+
+# Write the DataFrame to the specified table
+df.write.format("delta").saveAsTable(table_name)

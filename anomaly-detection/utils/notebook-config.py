@@ -1,8 +1,14 @@
 # Databricks notebook source
 # DBTITLE 1,Set database and streaming checkpoint
 checkpoint_path = "dbfs:/FileStore/demos/anomaly-detection/checkpoints"
+experiment_path = "dbfs:/FileStore/demos/anomaly-detection/experiments"
 catalog = 'demos'
 database = "anomaly_detection"
+
+# COMMAND ----------
+
+# Create the checkpoint path
+dbutils.fs.mkdirs(checkpoint_path)
 
 # COMMAND ----------
 
@@ -23,4 +29,5 @@ spark.sql(f"create database if not exists {database}")
 # DBTITLE 1,mlflow settings
 import mlflow
 model_name = "iot_anomaly_detection"
-mlflow.set_experiment('/demos/iot_anomaly_detection')
+username = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
+mlflow.set_experiment('/Users/{}/iot_anomaly_detection'.format(username))
