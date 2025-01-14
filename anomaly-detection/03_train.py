@@ -18,7 +18,7 @@
 
 # DBTITLE 1,Define config for this notebook 
 source_table = "silver"
-target_table = "feaures"
+target_table = "features"
 checkpoint_location_target = f"{checkpoint_path}/dataset"
 
 # COMMAND ----------
@@ -34,16 +34,20 @@ silver_df = spark.table(f"{database}.{source_table}")
 
 # COMMAND ----------
 
-import pandas as pd
 from pyspark.sql.functions import *
 
-#Label the Silver data
+# Label the Silver data
 labeled_df = (
   silver_df
-    .withColumn("anomaly", when(col('sensor_1') > 80, 1).when(col('sensor_1') < 10, 1).when(col('sensor_1') > 65, round(rand(1))).when(col('sensor_1') < 25, round(rand(1))).otherwise(0))
+    .withColumn("anomaly", when(col('sensor_1') > 80, 1.0)
+                          .when(col('sensor_1') < 10, 1.0)
+                          .when(col('sensor_1') > 65, round(rand(1)))
+                          .when(col('sensor_1') < 25, round(rand(1)))
+                          .otherwise(0.0)
+                          .cast(FloatType()))
 )
 
-#Display the labeled data
+# Display the labeled data
 display(labeled_df)
 
 # COMMAND ----------
@@ -51,6 +55,7 @@ display(labeled_df)
 # DBTITLE 1,Save Feature to Delta Table
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+from pyspark.sql.types import FloatType
 
 # Define window specifications
 rollingWindowSpec = Window.partitionBy("device_id").orderBy("timestamp").rowsBetween(-1, 0)
@@ -59,17 +64,15 @@ lagWindowSpec = Window.partitionBy("device_id").orderBy("timestamp")
 # Additional feature engineering
 features_df = (
   labeled_df
-    .withColumn("sensor_1_rolling_avg", F.avg("sensor_1").over(rollingWindowSpec))
-    .withColumn("sensor_2_rolling_avg", F.avg("sensor_2").over(rollingWindowSpec))
-    .withColumn("sensor_3_rolling_avg", F.avg("sensor_3").over(rollingWindowSpec))
-    .withColumn("sensor_1_diff", F.col("sensor_1") - F.lag("sensor_1", 1).over(lagWindowSpec))
-    .withColumn("sensor_2_diff", F.col("sensor_2") - F.lag("sensor_2", 1).over(lagWindowSpec))
-    .withColumn("sensor_3_diff", F.col("sensor_3") - F.lag("sensor_3", 1).over(lagWindowSpec))
-    .withColumn("sensor_1_sensor_2_interaction", F.col("sensor_1") * F.col("sensor_2"))
-    .withColumn("sensor_1_sensor_3_interaction", F.col("sensor_1") * F.col("sensor_3"))
-    .withColumn("sensor_2_sensor_3_interaction", F.col("sensor_2") * F.col("sensor_3"))
-    .withColumn("hour_of_day", F.hour(F.col("timestamp")))
-    .withColumn("day_of_week", F.dayofweek(F.col("timestamp")))
+    .withColumn("sensor_1_rolling_avg", F.avg("sensor_1").over(rollingWindowSpec).cast(FloatType()))
+    .withColumn("sensor_2_rolling_avg", F.avg("sensor_2").over(rollingWindowSpec).cast(FloatType()))
+    .withColumn("sensor_3_rolling_avg", F.avg("sensor_3").over(rollingWindowSpec).cast(FloatType()))
+    .withColumn("sensor_1_diff", (F.col("sensor_1") - F.lag("sensor_1", 1).over(lagWindowSpec)).cast(FloatType()))
+    .withColumn("sensor_2_diff", (F.col("sensor_2") - F.lag("sensor_2", 1).over(lagWindowSpec)).cast(FloatType()))
+    .withColumn("sensor_3_diff", (F.col("sensor_3") - F.lag("sensor_3", 1).over(lagWindowSpec)).cast(FloatType()))
+    .withColumn("hour_of_day", F.hour(F.col("timestamp")).cast(FloatType()))
+    .withColumn("day_of_week", F.dayofweek(F.col("timestamp")).cast(FloatType()))
+    .fillna(0.0)  # Fill null values with 0.0
 )
 
 # Save the features to a Delta table
