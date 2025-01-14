@@ -25,14 +25,13 @@
 # COMMAND ----------
 
 # DBTITLE 1,Define configs that are consistent throughout the accelerator
-# MAGIC %run ./util/notebook-config
+# MAGIC %run ./utils/notebook-config
 
 # COMMAND ----------
 
 # DBTITLE 1,Define config for this notebook 
 # define target table for this notebook
-dbutils.widgets.text("target_table", "bronze")
-target_table = getArgument("target_table")
+target_table = "bronze"
 checkpoint_location_target = f"{checkpoint_path}/{target_table}"
 
 # COMMAND ----------
@@ -42,36 +41,19 @@ checkpoint_location_target = f"{checkpoint_path}/{target_table}"
 # COMMAND ----------
 
 # DBTITLE 1,Ingest Raw Data from Kafka
-options = {
-  "kafka.ssl.endpoint.identification.algorithm": "https",
-  "kafka.sasl.jaas.config": sasl_config,
-  "kafka.sasl.mechanism": sasl_mechanism,
-  "kafka.security.protocol" : security_protocol,
-  "kafka.bootstrap.servers": kafka_bootstrap_servers,
-  "group.id": 1,
-  "subscribe": topic,
-  "topic": topic,
-  "checkpointLocation": checkpoint_path
-}
+# Read the stream from the specified table
+streaming_df = spark.readStream.table("demos.anomaly_detection.iot_stream")
 
-#Stream the Kafka records into a Dataframe
-kafka_df = (
-  spark.readStream
-    .format("kafka")
-    .options(**options)
-    .load()
-)
-
-#Uncomment to display the Kafka records
-# display(kafka_df)
+# Display the streaming DataFrame
+display(streaming_df)
 
 # COMMAND ----------
 
 # MAGIC %md 
 # MAGIC
-# MAGIC ### Write the Kafka data to Bronze Delta table
+# MAGIC ### Read streams from `iot_stream` and write to bronze Delta table
 # MAGIC
-# MAGIC Here we generate some data and pump the data into the kafka topic. For your use case, if there is a Kafka topic with data continuously arriving, you can skip the following data generation step.
+# MAGIC Here we generate some data. For real-world use cases, if there is a Kafka topic with data continuously arriving, you can skip the following data generation step.
 
 # COMMAND ----------
 
@@ -79,29 +61,16 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import IntegerType
 
 query = (
-  kafka_df
-    .withColumn(
-      "parsedValue",
-      F.col("value").cast("string")
-    )
+  streaming_df
+    .withColumn("parsedValue_sensor_1", F.col("sensor_1").cast("float"))
+    .withColumn("parsedValue_sensor_2", F.col("sensor_2").cast("float"))
     .writeStream
     .format("delta")
     .outputMode("append")
     .option("checkpointLocation", checkpoint_location_target)
-    .trigger(processingTime='30 seconds') # Use `.trigger(availableNow=True)` if you do NOT want to run the stream continuously, only to process available data since the last time it ran
+    .trigger(processingTime='30 seconds')  # Use `.trigger(availableNow=True)` if you do NOT want to run the stream continuously, only to process available data since the last time it ran
     .toTable(f"{database}.{target_table}")
 )
-
-# COMMAND ----------
-
-# MAGIC %run ./util/generate-iot-data
-
-# COMMAND ----------
-
-# DBTITLE 1,We can stop the query shortly after the data loading is finished 
-import time
-time.sleep(300)
-query.stop()
 
 # COMMAND ----------
 
