@@ -1,6 +1,6 @@
 from pyspark.sql.functions import (
     rand, expr, row_number, monotonically_increasing_id, 
-    dense_rank, col, lit, to_date, when
+    dense_rank, col, lit, to_date
 )
 from pyspark.sql import Window
 import pandas as pd
@@ -9,17 +9,15 @@ import datetime
 import random
 from random import randint, shuffle, random
 
-def get_starting_temps(start, end, frequency, amplitude, noisy, trend, mean, std_dev, year=True, **kwargs) -> pd.DataFrame:
+
+def get_starting_temps(start, end, frequency, amplitude, noisy, trend, mean, std_dev, **kwargs) -> pd.DataFrame:
     dates = pd.date_range(start, end)
     num_rows = len(dates)
-    if year:
-        normal1 = np.random.normal(loc=mean, scale=std_dev, size=num_rows // 2).clip(min=0, max=78)
-        normal1 = np.sort(normal1)
-        normal2 = np.random.normal(loc=mean, scale=std_dev, size=num_rows // 2 + num_rows % 2).clip(min=0, max=78)
-        normal2 = np.sort(normal2)[::-1]
-        normal = np.concatenate((normal1, normal2))
-    else:
-        normal = np.random.normal(loc=mean, scale=std_dev, size=num_rows).clip(min=0, max=78)
+    normal1 = np.random.normal(loc=mean, scale=std_dev, size=num_rows // 2).clip(min=0, max=78)
+    normal1 = np.sort(normal1)
+    normal2 = np.random.normal(loc=mean, scale=std_dev, size=num_rows // 2 + num_rows % 2).clip(min=0, max=78)
+    normal2 = np.sort(normal2)[::-1]
+    normal = np.concatenate((normal1, normal2))
     noise = 9.5 * make_timeseries('autoregressive', num_rows, frequency, amplitude, noisy=noisy, trend_factor=trend)
     temps = normal + noise
     pdf = pd.DataFrame({'date': dates, 'starting_temp': temps})
@@ -166,9 +164,8 @@ def add_defects(pdf: pd.DataFrame) -> pd.DataFrame:
       (pdf['delay'] > 39) & (pdf['rotation_speed'] > 590),
       (pdf['density'] > 4.2) & (pdf['air_pressure'] < 780),
     ]
-    outcomes = [round(random()+.8), round(random()+.85), round(random()+.85), round(random()+.85), round(random()+.95)]
+    outcomes = [round(random()+.2), round(random()+.2), round(random()+.2), round(random()+.2), round(random()+.15)]
     pdf['defect'] = np.select(conditions, outcomes, default=0)
-    pdf['defect'] = pdf['defect'].shift(20, fill_value=0)
     pdf = pdf.drop(['temp_difference', 'temp_ewma'], axis=1)        
     return pdf
 
@@ -195,37 +192,3 @@ def generate_iot(spark, dgconfig):
         .groupBy('device_id', 'trip_id').applyInPandas(add_trip_features, trip_schema)
         .groupBy('device_id').applyInPandas(add_defects, defect_schema)
     )
-
-def delete_entry(w, entry):
-    if entry.is_directory:
-        w.files.delete_directory(entry.path)
-    else:
-        w.files.delete(entry.path)
-
-
-
-def land_more_data(spark, dbutils, config, dgconfig):
-    print('Generating data, this may take a minute...')
-    iot_data = generate_iot(spark, dgconfig)
-    iot_data.write.format('delta').mode('overwrite').save(config['checkpoints']+'/tmp')
-    entire_dataset = spark.read.format('delta').load(config['checkpoints']+'/tmp')
-    sensor_data = (
-        entire_dataset.drop('defect')
-        .withColumn('temperature', when(rand() < 0.1, None).otherwise(col('temperature')))
-        .withColumn('air_pressure', when(rand() < 0.05, -col('air_pressure')).otherwise(col('air_pressure')))
-        .withColumn('timestamp', expr('timestamp + INTERVAL 3 SECONDS * rand()'))
-    )
-    num_defects = entire_dataset.count() * .004
-    defect_data = (
-        entire_dataset.select('defect', 'timestamp', 'device_id')
-        .where('defect = 1').orderBy(rand()).limit(int(num_defects/16))
-        .union(
-            entire_dataset.select('defect', 'timestamp', 'device_id')
-            .where('defect = 0').orderBy(rand()).limit(int(15*num_defects/16))
-        )
-        .withColumn('timestamp', expr('timestamp + INTERVAL 2 HOURS * (2 + rand())'))
-        .withColumn('timestamp', when(rand() < 0.05, None).otherwise(col('timestamp')))
-    )
-    sensor_data.write.mode('append').csv(config['sensor_landing'], header='true')
-    defect_data.write.mode('append').csv(config['inspection_landing'], header='true')
-    dbutils.fs.rm(config['checkpoints']+'/tmp', recurse=True)

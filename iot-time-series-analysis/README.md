@@ -1,27 +1,9 @@
-# Manufacturing Time-Series Analysis
+# Challenges Addressed
 
-## Overview
+Today, field maintenance is often reactive, rather than proactive, which can lead to costly downtime and repairs. However, with Databricks businesses can implement predictive maintenance strategies that allow them to identify and address potential issues before they become customer facing problems. Databricks provides end-to-end machine learning solutions including tools for data preparation, model training, and root cause analysis reporting.
 
-A scalable time-series analytics solution for manufacturing environments that enables real-time monitoring and anomaly detection of equipment sensor data. This solution helps organizations process streaming sensor data, detect anomalies, and visualize key performance metrics to optimize manufacturing operations and reduce equipment downtime.
-
-## Key Features
-
-- Real-time sensor data processing
-- Time-series analytics at scale
-- Anomaly detection for predictive maintenance
-- Equipment performance monitoring
-- Automated alerting system
-- Interactive dashboards for KPI tracking
-
-## Technical Capabilities
-
-- Parallel processing of time-series calculations
-- Exponential moving average computations
-- Automated data quality checks
-- Real-time metric calculations
-- Streaming analytics pipeline
-- Historical data analysis
+Scaling existing codebases and skill sets is a key theme when it comes to using Databricks for data and AI workloads, particularly given the large data volumes that are common in IOT and anomaly detection use cases. For instance, a business may be experiencing an increase in engine defect rates without a clear reason, and they may already have a team of data scientists who are skilled in using Pandas for data manipulation and analysis on small subsets of their data - for example, analyzing particularly notable trips one at a time. By using Databricks, these teams can easily apply their existing Pandas code to their entire large-scale IOT dataset, without having to learn a completely new set of tools and technologies to deploy and maintain the solution. Additionally, ML experimentation is often done in silos, with data scientists working locally and manually on their own machines on different copies of data. This can lead to a lack of reproducibility and collaboration, making it difficult to run ML efforts across an organization. Databricks addresses this challenge by enabling MLflow, an open-source tool for unified machine learning model experimentation, registry, and deployment. With MLflow, data scientists can collaboratively track and reproduce their experiments, as well as deploy their models into production.
 
 ## Reference Architecture
 
-<img src='https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/iot-time-series-analysis/docs/diagrams/diagrams.png?raw=true' width="100%">
+<img src='https://raw.githubusercontent.com/databricks-industry-solutions/iot_distributed_ml/master/images/reference_arch.png?raw=true' width=800>
