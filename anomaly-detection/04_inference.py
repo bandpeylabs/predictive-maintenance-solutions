@@ -1,8 +1,4 @@
 # Databricks notebook source
-# MAGIC %md You may find this series of notebooks at https://github.com/databricks-industry-solutions/iot-anomaly-detection. 
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC
 # MAGIC ## Predict Anomalous Events

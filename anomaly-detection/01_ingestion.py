@@ -10,14 +10,14 @@
 # MAGIC
 # MAGIC <p></p>
 # MAGIC
-# MAGIC <img src="https://github.com/bandpeycom/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams-target-architecture.png?raw=true" width=100%/>
+# MAGIC <img src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams/diagrams-target-architecture.png?raw=true" width=100%/>
 # MAGIC
 # MAGIC <p></p>
 # MAGIC
 # MAGIC ## Stream the Data from Azure Event Hub into a Bronze Delta Table
 # MAGIC
 # MAGIC <p></p>
-# MAGIC <center><img src="https://github.com/bandpeycom/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams-ingest.png?raw=true" width="30%"></center>
+# MAGIC <center><img src="https://github.com/bandpeylabs/predictive-maintenance-solutions/blob/main/anomaly-detection/docs/diagrams/diagrams-ingest.png?raw=true" width="30%"></center>
 # MAGIC
 # MAGIC
 # MAGIC This notebook will read the IoT data from Azure Event Hub and put it into a Delta Lake table called "Bronze".
