@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17" pages="2">
   <diagram name="target-architecture" id="O9XdC3RRBetugcBpTLkq">
-    <mxGraphModel dx="1242" dy="907" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1242" dy="829" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="LcAE4-p-ZAQXSCbZCqAu-0" />
         <mxCell id="LcAE4-p-ZAQXSCbZCqAu-1" parent="LcAE4-p-ZAQXSCbZCqAu-0" />
@@ -364,6 +364,16 @@
         </mxCell>
         <mxCell id="2ooZ0geTkht1RmO19FLc-10" value="dashboard" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#434445;aspect=fixed;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.vvd.nsx_dashboard;labelBackgroundColor=none;" parent="LcAE4-p-ZAQXSCbZCqAu-1" vertex="1">
           <mxGeometry x="1325.96" y="441.12" width="50" height="46.5" as="geometry" />
+        </mxCell>
+        <mxCell id="nDvdN8EAcUY8xf93czb_-0" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#00994D;labelBackgroundColor=none;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="LcAE4-p-ZAQXSCbZCqAu-1" source="2ooZ0geTkht1RmO19FLc-4" target="g3JtSoTKQPr87EbilQ1k-8">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="980" y="386" as="sourcePoint" />
+            <mxPoint x="1011" y="586" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1070" y="597" />
+              <mxPoint x="1070" y="376" />
+            </Array>
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

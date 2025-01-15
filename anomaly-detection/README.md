@@ -1,6 +1,6 @@
 # Real-time monitoring and anomaly detection on streaming IoT pipelines in Manufacturing
 
-![](./docs/diagrams-target-architecture.png)
+![](./docs/diagrams/diagrams-target-architecture.png)
 
 Requirements
 For current release support, see “Latest Releases” in the Azure Event Hubs Spark Connector project readme file.
