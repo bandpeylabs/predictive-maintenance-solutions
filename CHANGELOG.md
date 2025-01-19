@@ -1,6 +1,6 @@
 # 0.1.0
 
-## TBA
+## Anomaly Detection Solutoion Added
 
 # 0.0.3
 

@@ -12,3 +12,12 @@ Real-time plant performance monitoring solution featuring:
 - Multi-factory performance tracking
 - Real-time sensor data processing
 - Production KPI visualization
+
+### [Real-time Monitoring and Anomaly Detection](./anomaly-detection/README.md)
+
+Real-time monitoring and anomaly detection solution featuring:
+
+- Synthetic data generation
+- Decision tree classifier training
+- Real-time inference and scoring
+- Anomaly visualization dashboard
