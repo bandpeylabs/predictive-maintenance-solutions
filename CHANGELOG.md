@@ -1,4 +1,8 @@
-# 0.1.0
+# 1.0.1
+
+## Demo completed
+
+
 
 ## Anomaly Detection Solutoion Added
 
@@ -12,4 +16,3 @@
 
 # 0.0.1
 
-## Initial version
