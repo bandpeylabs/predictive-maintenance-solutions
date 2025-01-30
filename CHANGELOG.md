@@ -2,8 +2,6 @@
 
 ## Demo completed
 
-
-
 ## Anomaly Detection Solutoion Added
 
 # 0.0.3
