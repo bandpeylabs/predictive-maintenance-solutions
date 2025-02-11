@@ -17,9 +17,26 @@
 # COMMAND ----------
 
 # DBTITLE 1,Create Metastore & Schema
+
+from pyspark.sql.utils import AnalysisException
+
+if [row.catalog for row in spark.sql("SHOW CATALOGS").collect() if row.catalog == 'demos']:
+    print("catalog 'demos' already exists")
+else:
+    try:
+        # Attempt to create the catalog
+        spark.sql("CREATE CATALOG IF NOT EXISTS demos")
+        print("Catalog 'demos' created successfully or already exists.")
+
+    except AnalysisException as error:
+        error_message = str(error)
+        print(f"""you might lacking priviledges to create a new catalog 
+
+        Error catched: {error_message}""")
+
+# COMMAND ----------
+
 # MAGIC %sql
-# MAGIC -- Create the catalog
-# MAGIC CREATE CATALOG IF NOT EXISTS demos;
 # MAGIC
 # MAGIC -- Create the schema within the catalog
 # MAGIC CREATE SCHEMA IF NOT EXISTS demos.factory_optimization;
@@ -128,12 +145,16 @@ silver_df = (
 for rule_name, rule_condition in silver_rules.items():
     silver_df = silver_df.filter(expr(rule_condition))
 
+
+# COMMAND ----------
+
 # Write the stream to a Delta table in the specified schema
 (silver_df.writeStream
     .format("delta")
     .option("mergeSchema", "true")
     .option("checkpointLocation", "dbfs:/FileStore/demos/factory_optimization/silver/checkpoint")
     .table("demos.factory_optimization.silver"))
+
 
 # COMMAND ----------
 
@@ -179,6 +200,11 @@ gold_rules = {"warn_defective_parts":"defectivePartsMade < 35",
               "warn_low_oilLevel":"min_oilLevel > 60", 
               "warn_decrease_Quality": "Quality > 99", 
               "warn_decrease_OEE": "OEE > 99.3"}
+
+# COMMAND ----------
+
+silver_df = spark.readStream.table("demos.factory_optimization.silver")
+display(silver_df)
 
 # COMMAND ----------
 
@@ -234,6 +260,17 @@ result_df = bus_agg.join(workforce_df, ["shiftNumber"], "inner")
     .option("checkpointLocation", "dbfs:/FileStore/demos/factory_optimization/gold/checkpoint")
     .outputMode("append")
     .table("demos.factory_optimization.gold"))
+
+# COMMAND ----------
+
+
+# Write the stream to a Delta table in the specified schema
+(silver_df.writeStream
+    .format("delta")
+    .option("mergeSchema", "true")
+    .option("checkpointLocation", "dbfs:/FileStore/demos/factory_optimization/silver/checkpoint")
+    .table("demos.factory_optimization.silver"))
+
 
 # COMMAND ----------
 

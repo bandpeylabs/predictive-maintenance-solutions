@@ -24,6 +24,16 @@
 
 # COMMAND ----------
 
+catalog_name = 'demos'
+schema_name = 'anomaly_detection'
+spark.sql(f"USE CATALOG {catalog_name}")
+
+# Use the variable in the SQL command
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
+spark.sql(f"USE SCHEMA {schema_name}")
+
+# COMMAND ----------
+
 # DBTITLE 1,Define configs that are consistent throughout the accelerator
 # MAGIC %run ./utils/notebook-config
 
